@@ -1,0 +1,43 @@
+name: BORA Monitor
+
+on:
+  schedule:
+    # 08:00, 14:00, 23:55 ART (UTC-3)
+    # 11:00, 17:00, 02:55 UTC
+    - cron: '0 11 * * *'
+    - cron: '0 17 * * *'
+    - cron: '55 2 * * *'
+    # Optional: Poll every hour for updates/commands
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual run
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Run Bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python main.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "BORA Bot Action"
+          git config --global user.email "bot@github-action.com"
+          git add data/*.json
+          git commit -m "Auto-update state and config [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
