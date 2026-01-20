@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Data and State
+# Permitimos el archivo de estado para persistencia en GitHub Actions
+!data/estado.json
+
+# IDEs
+.vscode/
+.idea/
