@@ -33,6 +33,7 @@ jobs:
         run: |
           git config --global user.name "BORA Bot"
           git config --global user.email "bot@bora.com"
-          git add data/estado.json
+          # Usamos --force para asegurar que se agregue aunque esté en gitignore
+          git add --force data/estado.json || echo "Archivo no encontrado"
           git commit -m "Actualizar estado de normas vistas [skip ci]" || echo "Sin cambios"
           git push origin main || echo "Nada que subir"
