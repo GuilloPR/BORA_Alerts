@@ -57,18 +57,25 @@ def obtener_publicaciones():
             if categoria == "OTROS":
                 continue
 
-            # Extraer número y resumen
+            # Extraer organismo, número y resumen
+            organismo = "GENERAL"
+            p_organismo = a.find('p', class_='item')
+            if p_organismo:
+                organismo = p_organismo.get_text(strip=True)
+
             nro = "S/N"
             resumen = ""
-            detalle = a.find('div', class_='item-detalle')
-            if detalle:
-                smalls = detalle.find_all('small')
-                if len(smalls) >= 1: nro = smalls[0].get_text(strip=True)
-                if len(smalls) >= 2: resumen = smalls[1].get_text(strip=True)
+            detalles = a.find_all('p', class_='item-detalle')
+            
+            if len(detalles) >= 1:
+                nro = detalles[0].get_text(strip=True)
+            if len(detalles) >= 2:
+                resumen = detalles[1].get_text(strip=True)
 
             items.append({
                 "id": aviso_id,
                 "categoria": categoria,
+                "organismo": organismo,
                 "numero": nro,
                 "resumen": resumen,
                 "url": f"https://www.boletinoficial.gob.ar{href}"
@@ -86,7 +93,7 @@ def enviar_email(nuevos_items):
     msg = MIMEMultipart()
     msg['From'] = SMTP_USER
     msg['To'] = EMAIL_RECEIVER
-    msg['Subject'] = f"🔔 Alerta BORA: Nuevas Leyes y Decretos detectados"
+    msg['Subject'] = f"🔔 Alerta BORA: Nuevas publicaciones detectadas"
 
     cuerpo = "<h2>Nuevas publicaciones en el Boletín Oficial</h2>"
     cuerpo += "<p>Se han detectado las siguientes normas de interes, agrupadas por categoría:</p>"
@@ -101,14 +108,19 @@ def enviar_email(nuevos_items):
     for cat, items in agrupados.items():
         cuerpo += f"<h3 style='background-color: #f8f9fa; padding: 10px; border-left: 5px solid #007bff;'>{cat} ({len(items)})</h3>"
         for item in items:
+            # Si el número es "S/N", destacamos el organismo.
+            # Si tiene número, lo mostramos debajo del organismo.
+            titulo = item['organismo']
+            subtitulo = item['numero'] if item['numero'] != "S/N" else ""
+            
             cuerpo += f"""
-            <div style="margin-bottom: 15px; padding-left: 10px;">
-                <p style="margin-bottom: 5px;"><b>{item['numero']}</b></p>
-                <p style="color: #444; margin-top: 0; font-size: 0.9em;">{item['resumen']}</p>
-                <a href="{item['url']}" style="color: #007bff; text-decoration: none; font-weight: bold;">🔗 Ver en BORA</a>
+            <div style="margin-bottom: 20px; padding-left: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <p style="margin-bottom: 5px; font-size: 1.1em; color: #000;"><b>{titulo}</b></p>
+                {f'<p style="margin: 0; font-weight: bold; color: #444;">{subtitulo}</p>' if subtitulo else ''}
+                <p style="color: #555; margin-top: 5px; margin-bottom: 10px; font-size: 0.95em;">{item['resumen']}</p>
+                <a href="{item['url']}" style="color: #007bff; text-decoration: none; font-weight: bold;">🔗 Ver aviso en BORA</a>
             </div>
             """
-        cuerpo += "<hr style='border: 0; border-top: 1px solid #eee;'>"
 
     cuerpo += "<p><small>Este es un aviso automático generado por tu Alerta BORA personalizada.</small></p>"
     msg.attach(MIMEText(cuerpo, 'html'))
